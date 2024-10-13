@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Digit Classifier</title>
+    <style>
+        /* Reset some default styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 350px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333333;
+            font-size: 24px;
+        }
+
+        .file-input {
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input input[type="file"] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-input label {
+            display: block;
+            padding: 12px 20px;
+            background-color: #4A90E2;
+            color: #ffffff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            position: relative;
+        }
+
+        .file-input label:hover {
+            background-color: #357ABD;
+            transform: scale(1.05);
+        }
+
+        .file-name {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #555555;
+            word-wrap: break-word;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: #50C878;
+            color: #ffffff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #3DA34D;
+            transform: scale(1.02);
+        }
+
+        #predictionResult {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333333;
+            min-height: 24px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 400px) {
+            .container {
+                padding: 20px;
+                width: 90%;
+            }
+
+            button, .file-input label {
+                font-size: 14px;
+                padding: 10px 16px;
+            }
+
+            #predictionResult {
+                font-size: 16px;
+            }
+
+            .file-name {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Digit Classifier</h1>
+        <div class="file-input">
+            <input type="file" id="imageInput" accept="image/*">
+            <label for="imageInput">Choose Image</label>
+        </div>
+        <div class="file-name" id="fileName">No file chosen</div>
+        <button onclick="uploadImage()">Classify</button>
+        <p id="predictionResult"></p>
+    </div>
+
+    <script type="text/javascript">
+        const input = document.getElementById('imageInput');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        // Update the file name display when a file is selected
+        input.addEventListener('change', function() {
+            if (input.files && input.files[0]) {
+                fileNameDisplay.textContent = input.files[0].name;
+            } else {
+                fileNameDisplay.textContent = 'No file chosen';
+            }
+        });
+
+        async function uploadImage() {
+            if (!input.files[0]) {
+                alert("Please select a file to upload!");
+                return;
+            }
+
+            const file = input.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // Show a loading indicator (optional)
+                const predictionResult = document.getElementById('predictionResult');
+                predictionResult.textContent = 'Classifying...';
+
+                const response = await fetch('http://127.0.0.1:8000/predict-image/', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.prediction !== undefined) {
+                    predictionResult.textContent = `Prediction: ${result.prediction}`;
+                } else if (result.error) {
+                    predictionResult.textContent = `Error: ${result.error}`;
+                } else {
+                    predictionResult.textContent = 'Unexpected response from the server.';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to classify the image. Please try again.');
+                document.getElementById('predictionResult').textContent = '';
+            }
+        }
+    </script>
+</body>
+</html>
